@@ -10,7 +10,9 @@ const chalk = require('chalk');
 let { render } = require('consolidate').ejs;
 let downloadGitRepo = require('download-git-repo');
 let ncp = require('ncp'); // 复制文件
-const { downloadDirectory } = require('./constants'); // 临时安装路径
+
+// 临时安装路径、private token存储路径
+const { downloadDirectory, privateTokenDir } = require('./constants');
 
 // promise化render函数、downloadGitRepo函数、ncp函数
 render = promisify(render);
@@ -75,54 +77,76 @@ const download = async (repo, tag) => {
   return downloadPath;
 }
 
+// 输入private token
+const enterToken = async () => {
+  const { token } = await Inquirer.prompt({
+    name: 'token',
+    type: 'input',
+    message: 'Please enter your gitlab private token',
+  });
+  PRIVATETOKEN = token;
+  fse.emptyDirSync(privateTokenDir);
+  fse.ensureFileSync(`${privateTokenDir}/token.txt`);
+  fs.writeFileSync(`${privateTokenDir}/token.txt`, PRIVATETOKEN);
+}
+
 // 逻辑主体
 module.exports = async (projectName = 'my-project') => {
+  // 判断创建工程目录是否已存在
   if (fs.existsSync(projectName)) {
-    console.log(chalk.red('Folder already exists'));
-  } else {
-    const { token } = await Inquirer.prompt({
-      name: 'token',
-      type: 'input',
-      message: 'Please enter your gitlab private token',
-    });
-    PRIVATETOKEN = token;
-    // 1、获取组织下的所有模板
-    const repos = await waitLoading(fetchRepoList, 'fetching template...')();
-    const list = repos.map((item) => item.name);
-    // 选择模板
-    const { repo } = await Inquirer.prompt({
-      name: 'repo',
-      type: 'list',
-      message: 'Please chiose a template to create project',
-      choices: list
-    });
-    const repoId = repos.find((item) => item.name === repo).id || '';
+    return console.log(chalk.red('Folder already exists'));
+  }
 
-    // 获取当前选择项目的对应版本号
-    let tags = await waitLoading(fetchTagList, 'fetching tags...')(repoId);
-    let result;
-    if (tags.length > 0) {
-      tags = tags.map((item) => item.name);
-      // 选择模板的变化
-      const { tag } = await Inquirer.prompt({
-        name: 'tag',
-        type: 'list',
-        message: 'please choise tags to create project',
-        choices: tags
-      });
-      // 下载模板，拿到缓存模板路径
-      result = await waitLoading(download, 'download template...')(repo, tag);
+  // private token的读写
+  try {
+    const fileContent = fs.readFileSync(`${privateTokenDir}/token.txt`, 'utf-8');
+    if (!fileContent.toString()) {
+      await enterToken();
     } else {
-      result = await waitLoading(download, 'download template...')(repo);
+      PRIVATETOKEN = fileContent.toString();
+      console.log('\r\n', chalk.yellow(`Your private token is: ${PRIVATETOKEN}`));
     }
-    // 把模板复制到projectName
-    try {
-      await ncp(result, path.resolve(projectName));
-      fse.remove(downloadPath);
-      console.log('\r\n', chalk.green(`cd ${projectName}\r\n\n`), chalk.yellow('npm install\r\n'))
-    } catch (error) {
-      console.log(error);
-    }
+  } catch (err) {
+    await enterToken();
+  }
+
+  // 获取组织下的所有模板
+  const repos = await waitLoading(fetchRepoList, 'fetching template...')();
+  const list = repos.map((item) => item.name);
+  // 选择模板
+  const { repo } = await Inquirer.prompt({
+    name: 'repo',
+    type: 'list',
+    message: 'Please chiose a template to create project',
+    choices: list
+  });
+  const repoId = repos.find((item) => item.name === repo).id || '';
+
+  // 获取当前选择项目的对应版本号
+  let tags = await waitLoading(fetchTagList, 'fetching tags...')(repoId);
+  let result;
+  if (tags.length > 0) {
+    tags = tags.map((item) => item.name);
+    // 选择模板的变化
+    const { tag } = await Inquirer.prompt({
+      name: 'tag',
+      type: 'list',
+      message: 'please choise tags to create project',
+      choices: tags
+    });
+    // 下载模板，拿到缓存模板路径
+    result = await waitLoading(download, 'download template...')(repo, tag);
+  } else {
+    result = await waitLoading(download, 'download template...')(repo);
+  }
+  // 把模板复制到projectName
+  try {
+    await ncp(result, path.resolve(projectName));
+    fse.remove(downloadPath);
+    console.log('\r\n', chalk.green(`cd ${projectName}\r\n\n`), chalk.yellow('npm install\r\n'));
+  } catch (error) {
+    console.log(error);
+    fse.emptyDirSync(privateTokenDir);
   }
 }
 
