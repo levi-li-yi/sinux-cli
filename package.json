@@ -1,6 +1,6 @@
 {
   "name": "sinux-cli",
-  "version": "2.0.32",
+  "version": "2.0.33",
   "description": "create frontend project",
   "main": "index.js",
   "bin": {
