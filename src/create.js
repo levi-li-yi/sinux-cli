@@ -44,19 +44,14 @@ const http = (postData) => {
 // 获取仓库列表
 const fetchRepoList = async () => {
   // 获取当前组织中所有仓库信息，该仓库存放的都是项目模板
-  // const { data } = await axios.get('https://api.github.com/users/levi-li-yi/repos');
-
-  // 获取权限下的所有工程信息：http://192.168.3.11/api/v3/projects
-  // 获取groupsID为456分组下的所有工程清单
-  const { data } = await http({ url: 'http://192.168.3.11/api/v4/groups/456/projects', metohd: 'get', headers: { 'PRIVATE-TOKEN': PRIVATETOKEN } });
+  const { data } = await axios.get('https://api.github.com/users/levi-li-yi/repos');
   return data;
 };
 
 // 获取项目的版本号 https://api.github.com/repos/levi-li-yi/express_frontend/tags
-const fetchTagList = async (repoId) => {
+const fetchTagList = async (repo) => {
   // console.log(`https://api.github.com/repos/levi-li-yi/${repo}/tags`);
-  // const { data } = await axios.get(`https://api.github.com/repos/levi-li-yi/${repo}/tags`);
-  const { data } = await http({ url: `http://192.168.3.11/api/v4/projects/${repoId}/repository/tags`, metohd: 'get', headers: { 'PRIVATE-TOKEN': PRIVATETOKEN } });
+  const { data } = await axios.get(`https://api.github.com/repos/levi-li-yi/${repo}/tags`);
   return data;
 };
 
@@ -71,16 +66,12 @@ const waitFnloading = (fn, message) => async (...args) => {
 
 // 下载模板
 const download = async (repo, tag) => {
-  // let api = `levi-li-yi/${repo}`;
-  let sourcePath = `gitlab:http://192.168.3.11:BasicMaterial/${repo}`;
-  // http://liyi@192.168.3.11/BasicMaterial/create-vue2-project.git
-  // let api = `direct:http://${username}@192.168.3.11/BasicMaterial/${repo}.git`
+  let sourcePath = `levi-li-yi/${repo}`;
   if (tag) sourcePath += `#${tag}`;
-  console.log(sourcePath);
   // 下载目标地址
   downloadPath = `${downloadDirectory}/${repo}`;
   const dest = downloadPath;
-  await downloadGitRepo(sourcePath, dest, { headers: { 'PRIVATE-TOKEN': PRIVATETOKEN } }); // 下载模板存放地址
+  await downloadGitRepo(sourcePath, dest); // 下载模板存放地址
   return dest;
 }
 
@@ -89,13 +80,6 @@ module.exports = async (projectName = 'my-project') => {
   if (fs.existsSync(projectName)) {
     console.log(chalk.red('Folder already exists'));
   } else {
-    const { token } = await Inquirer.prompt({
-      name: 'token',
-      type: 'input',
-      message: 'Please enter your gitlab private token',
-    });
-    PRIVATETOKEN = token;
-
     // 1、获取组织下的所有模板
     let repos = await waitFnloading(fetchRepoList, 'fetching template...')();
     let list = repos.map((item) => item.name);
@@ -106,11 +90,8 @@ module.exports = async (projectName = 'my-project') => {
       message: 'Please chiose a template to create project',
       choices: list
     });
-    const repoId = repos.find((item) => item.name === repo).id || '';
-
     // 获取当前选择项目的对应版本号
-    let tags = await waitFnloading(fetchTagList, 'fetching tags...')(repoId);
-    console.log(tags);
+    let tags = await waitFnloading(fetchTagList, 'fetching tags...')(repo);
     let result;
     // 
     if (tags.length > 0) {
