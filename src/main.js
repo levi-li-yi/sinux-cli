@@ -19,6 +19,7 @@ const mapAction = {
   },
 };
 
+// 制定脚手架命令
 Reflect.ownKeys(mapAction).forEach((action) => {
   program.command(action) // 命令名字
     .alias(mapAction[action].alias) // 命令别名
@@ -32,7 +33,8 @@ Reflect.ownKeys(mapAction).forEach((action) => {
     });
 });
 
-program.on('--help', () => { // --help命令打印帮助信息
+// 制定脚手架--help命令打印帮助信息
+program.on('--help', () => {
   console.log('\nExample');
   Reflect.ownKeys(mapAction).forEach((action) => {
     mapAction[action].examples.forEach((item) => {
@@ -41,5 +43,6 @@ program.on('--help', () => { // --help命令打印帮助信息
   });
 });
 
+// process.argv：获取命令行中输入的参数；定义脚手架版本号
 program.version(version)
-  .parse(process.argv);// process.argv：获取命令行中输入的参数
+  .parse(process.argv);

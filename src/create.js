@@ -1,24 +1,15 @@
 // 1、create功能需求：在命令行中输入"sinux-vue2-cli create project-name"可以建立一个"project-name"的项目，项目中文件时提前建立好的template;
-
-// 2、create功能实现步骤：
-// (1) 获取组织下的所有模板；
-// (2) 获取当前选择项目的对应版本号；
-// (3) 拉取模板存到一个目录下备用；
-// (4) 拷贝生成新的项目;
-
 const fs = require('fs');
 const path = require('path');
 const fse = require('fs-extra');
-const axios = require('axios'); // http请求
-const ora = require('ora'); // 加载loading进度条
-const Inquirer = require('inquirer'); // 监护命令行工具
+const axios = require('axios');
+const ora = require('ora');
+const Inquirer = require('inquirer');
 const { promisify } = require('util');
-const chalk = require('chalk'); // 读取所有文件，实现模板渲染
-// const MetalSmith = require('metalsmith'); // 读取所有文件，实现模板渲染
-let { render } = require('consolidate').ejs; // 模板引擎
-let downloadGitRepo = require('download-git-repo'); // 在git中下载模板
+const chalk = require('chalk');
+let { render } = require('consolidate').ejs;
+let downloadGitRepo = require('download-git-repo');
 let ncp = require('ncp'); // 复制文件
-
 const { downloadDirectory } = require('./constants'); // 临时安装路径
 
 // promise化render函数、downloadGitRepo函数、ncp函数
@@ -79,7 +70,9 @@ const download = async (repo, tag) => {
   const sourcePath = `gitlab:http://192.168.3.11:BasicMaterial/${repo}`;
   if (tag) sourcePath += `#${tag}`;
   downloadPath = `${downloadDirectory}/${repo}`;
-  return await downloadGitRepo(sourcePath, downloadPath, { headers: { 'PRIVATE-TOKEN': PRIVATETOKEN } }); // 下载模板存放地址
+  // 下载工程到指定路径
+  await downloadGitRepo(sourcePath, downloadPath, { headers: { 'PRIVATE-TOKEN': PRIVATETOKEN } });
+  return downloadPath;
 }
 
 // 逻辑主体
@@ -122,15 +115,19 @@ module.exports = async (projectName = 'my-project') => {
     } else {
       result = await waitLoading(download, 'download template...')(repo);
     }
-    console.log(result);
-
     // 把模板复制到projectName
     try {
       await ncp(result, path.resolve(projectName));
-      fse.remove(downloadPath)
+      fse.remove(downloadPath);
       console.log('\r\n', chalk.green(`cd ${projectName}\r\n\n`), chalk.yellow('npm install\r\n'))
     } catch (error) {
       console.log(error);
     }
   }
 }
+
+// 2、create功能实现步骤：
+// (1) 获取组织下的所有模板；
+// (2) 获取当前选择项目的对应版本号；
+// (3) 拉取模板存到一个目录下备用；
+// (4) 拷贝生成新的项目;
