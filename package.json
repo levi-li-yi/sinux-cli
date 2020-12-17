@@ -1,0 +1,34 @@
+{
+  "name": "sinux-cli",
+  "version": "2.0.32",
+  "description": "create frontend project",
+  "main": "index.js",
+  "bin": {
+    "sinux-cli": "./bin/www"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/levi-li-yi/sinux-cli.git"
+  },
+  "author": "liyi",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/levi-li-yi/sinux-cli/issues"
+  },
+  "homepage": "https://github.com/levi-li-yi/sinux-cli#readme",
+  "dependencies": {
+    "axios": "^0.21.0",
+    "chalk": "^4.1.0",
+    "commander": "^6.2.1",
+    "consolidate": "^0.16.0",
+    "download-git-repo": "^3.0.2",
+    "fs-extra": "^9.0.1",
+    "inquirer": "^7.3.3",
+    "metalsmith": "^2.3.0",
+    "ncp": "^2.0.0",
+    "ora": "^5.1.0"
+  }
+}
