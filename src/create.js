@@ -22,6 +22,7 @@ ncp = promisify(ncp);
 let PRIVATETOKEN = ''; // gitlab 用户的私人token
 let downloadPath = ''; // 模板临时下载路径
 const service = axios.create({}); // 初始化axios实例
+const BASE_URL = 'http://192.168.3.11';
 
 // 请求库封装
 const http = (postData) => {
@@ -37,7 +38,7 @@ const http = (postData) => {
 // 备注：获取权限下的所有工程信息：http://192.168.3.11/api/v3/projects
 const fetchRepoList = async () => {
   const { data } = await http({
-    url: 'http://192.168.3.11/api/v4/groups/456/projects',
+    url: `${BASE_URL}/api/v4/groups/456/projects`,
     metohd: 'get',
     headers: {
       'PRIVATE-TOKEN': PRIVATETOKEN
@@ -49,7 +50,7 @@ const fetchRepoList = async () => {
 // 获取项目的版本tag
 const fetchTagList = async (repoId) => {
   const { data } = await http({
-    url: `http://192.168.3.11/api/v4/projects/${repoId}/repository/tags`,
+    url: `${BASE_URL}/api/v4/projects/${repoId}/repository/tags`,
     metohd: 'get',
     headers: {
       'PRIVATE-TOKEN': PRIVATETOKEN
@@ -69,7 +70,7 @@ const waitLoading = (fn, message) => async (...args) => {
 
 // 下载模板
 const download = async (repo, tag) => {
-  const sourcePath = `gitlab:http://192.168.3.11:BasicMaterial/${repo}`;
+  const sourcePath = `gitlab:${BASE_URL}:BasicMaterial/${repo}`;
   if (tag) sourcePath += `#${tag}`;
   downloadPath = `${downloadDirectory}/${repo}`;
   // 下载工程到指定路径
